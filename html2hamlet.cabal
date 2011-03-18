@@ -55,6 +55,9 @@ Executable html2hamlet
                      , hamlet >= 0.7 && < 0.8
                      , xmlhtml >= 0.1 && < 0.2
                      , cmdargs >= 0.6 && < 0.7
+                     , http-enumerator >= 0.4 && < 0.5
+                     , network >= 2.3 && < 2.4
+                     , ascii >= 0.0 && < 0.1
   
   -- Modules not exported by this package.
   -- Other-modules:       

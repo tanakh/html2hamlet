@@ -7,11 +7,16 @@ import Blaze.ByteString.Builder
 import Blaze.ByteString.Builder.Char.Utf8
 import Control.Applicative
 import Control.Monad
+import qualified Data.Ascii as A
 import Data.Char
 import Data.List
+import Data.Maybe
 import Data.Monoid
 import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.Text as T
+import Network
+import Network.HTTP.Enumerator
 import System.Console.CmdArgs
 import Text.XmlHtml
 import Text.XmlHtml.Cursor
@@ -41,13 +46,33 @@ main = do
     B.length dest `seq` B.putStr dest
     else do
     forM_ files $ \file -> do
-      let outfile =
-            if any (`isSuffixOf` file) [".html", ".htm"]
-            then (++"hamlet") $ reverse $ dropWhile (/='.') $ reverse file
-            else file ++ ".hamlet"
-      con <- B.readFile file
-      let dest = convert file con
-      B.length dest `seq` B.writeFile outfile dest
+      if any (`isPrefixOf` file) ["http://", "https://"]
+        then withSocketsDo $ do
+        let outfile = httpFileName file
+        con <- simpleHttp $ fromJust $ A.fromChars file
+        let dest = convert file $ B.concat $ BL.toChunks con
+        B.length dest `seq` B.writeFile outfile dest
+        else do
+        let outfile = changeSuffix file
+        con <- B.readFile file
+        let dest = convert file con
+        B.length dest `seq` B.writeFile outfile dest
+
+httpFileName :: String -> String
+httpFileName url = changeSuffix nsuf
+  where
+    nsuf | null suf = "index.html"
+         | otherwise = suf
+    suf = dropQuery $ dropFrag $ reverse $ takeWhile (/='/') $ reverse url
+    dropFrag = takeWhile (/='#')
+    dropQuery = takeWhile (/='?')
+
+changeSuffix :: String -> String
+changeSuffix file
+  | any (`isSuffixOf` file) [".html", ".htm"] =
+    (++"hamlet") $ reverse $ dropWhile (/='.') $ reverse file
+  | otherwise =          
+    file ++ ".hamlet"
 
 convert :: String -> B.ByteString -> B.ByteString
 convert fname content = toByteString $ cvt $ fromNodes nodes
