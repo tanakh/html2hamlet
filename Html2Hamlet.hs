@@ -1,23 +1,30 @@
 {-# Language OverloadedStrings #-}
+{-# Language DeriveDataTypeable #-}
 
 module Main (main) where
 
+import Blaze.ByteString.Builder
+import Blaze.ByteString.Builder.Char.Utf8
 import Data.Char
 import Data.Monoid
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Text as T
--- import System.Console.CmdArgs
+import System.Console.CmdArgs
 import Text.XmlHtml
 import Text.XmlHtml.Cursor
 
-import Blaze.ByteString.Builder
-import Blaze.ByteString.Builder.Char.Utf8
+data Args =
+  Args
+  { files :: [String]
+  } deriving (Show, Data, Typeable)
 
 main :: IO ()
 main = do
+  Args files <- cmdArgs $ Args
+    { files = [] &= args &= typFile
+    } &= summary "HTML to Hamler converter"
   con <- B.getContents
-  let s = convert "<stdin>" con
-  B.putStrLn s
+  B.putStrLn $ convert "<stdin>" con
   return ()
 
 convert :: String -> B.ByteString -> B.ByteString
