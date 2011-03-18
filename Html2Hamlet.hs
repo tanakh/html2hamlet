@@ -5,13 +5,19 @@ module Main (main) where
 
 import Blaze.ByteString.Builder
 import Blaze.ByteString.Builder.Char.Utf8
+import Control.Applicative
+import Control.Monad
 import Data.Char
+import Data.List
 import Data.Monoid
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Text as T
 import System.Console.CmdArgs
 import Text.XmlHtml
 import Text.XmlHtml.Cursor
+
+import qualified Paths_html2hamlet
+import Data.Version (showVersion)
 
 data Args =
   Args
@@ -21,16 +27,36 @@ data Args =
 main :: IO ()
 main = do
   Args files <- cmdArgs $ Args
-    { files = [] &= args &= typFile
-    } &= summary "HTML to Hamler converter"
-  con <- B.getContents
-  B.putStrLn $ convert "<stdin>" con
-  return ()
+    { files = def &= args &= typ "FILES/URLS..."
+    } &=
+    help "HTML to Hamlet converter" &=
+    summary ("html2hamlet " ++
+             showVersion Paths_html2hamlet.version ++
+             " (c) Hideyuki Tanaka 2011")
+  
+  if null files
+    then do
+    con <- B.getContents
+    let dest = convert "stdin" con
+    B.length dest `seq` B.putStr dest
+    else do
+    forM_ files $ \file -> do
+      let outfile =
+            if any (`isSuffixOf` file) [".html", ".htm"]
+            then (++"hamlet") $ reverse $ dropWhile (/='.') $ reverse file
+            else file ++ ".hamlet"
+      con <- B.readFile file
+      let dest = convert file con
+      B.length dest `seq` B.writeFile outfile dest
 
 convert :: String -> B.ByteString -> B.ByteString
-convert fname content = toByteString $ go 0 $ fromNodes nodes
+convert fname content = toByteString $ cvt $ fromNodes nodes
   where
     Right (HtmlDocument enc typ nodes) = parseHTML fname content
+    
+    cvt = (fromString "!!!" `mappend`) .
+          (`mappend` fromString "\n") .
+          go 0
     
     go lev (Just cur) = slf `mappend` cld `mappend` bro
       where
@@ -70,4 +96,5 @@ convert fname content = toByteString $ go 0 $ fromNodes nodes
         fromText val `mappend`
         fromString "\""
 
-    sanitize = T.map (\c -> if c=='\n' then ' ' else c)
+    sanitize = T.dropWhile isSpace .
+               T.map (\c -> if c=='\n' then ' ' else c)
