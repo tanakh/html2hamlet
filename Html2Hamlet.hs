@@ -94,17 +94,25 @@ convert fname content = toByteString $ cvt $ fromNodes nodes
     single lev (TextNode txt)
       | T.all isSpace txt = mempty
       | otherwise =
-        fromString "\n" `mappend`
-        fromString (replicate (lev*2) ' ') `mappend`
+        newline lev `mappend`
         fromText (sanitize txt)
-    single lev (Comment comment) = mempty
+    single lev (Comment comment) =
+      mconcat $ do
+        line <- T.lines comment
+        return $
+          newline lev `mappend`
+          fromString "$# " `mappend`
+          fromText line
     single lev (Element tag attrs _) =
-      fromString "\n" `mappend`
-      fromString (replicate (lev*2) ' ') `mappend`
+      newline lev `mappend`
       fromString "<" `mappend`
       fromText tag `mappend`
       battr attrs `mappend`
       fromString ">"
+
+    newline lev =
+      fromString "\n" `mappend`
+      fromString (replicate (lev*2) ' ')
 
     battr attrs = mconcat $ map f attrs where
       f ("id", val) =
