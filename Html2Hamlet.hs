@@ -119,8 +119,11 @@ convert fname content = toByteString $ cvt $ fromNodes nodes
         fromString " #" `mappend`
         fromText val
       f ("class", val) =
-        fromString " ." `mappend`
-        fromText val
+        mconcat $ do
+          klass <- T.words val
+          return $
+            fromString " ." `mappend`
+            fromText klass
       f (key, val) =
         fromString " " `mappend`
         fromText key `mappend`
