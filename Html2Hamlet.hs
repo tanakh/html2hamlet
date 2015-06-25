@@ -1,27 +1,27 @@
-{-# Language OverloadedStrings #-}
-{-# Language DeriveDataTypeable #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE OverloadedStrings  #-}
 
 module Main (main) where
 
-import Blaze.ByteString.Builder
-import Blaze.ByteString.Builder.Char.Utf8
-import Control.Applicative
-import Control.Monad
-import Data.Char
-import Data.List
-import Data.Maybe
-import Data.Monoid
-import qualified Data.ByteString.Char8 as B
-import qualified Data.ByteString.Lazy.Char8 as BL
-import qualified Data.Text as T
-import Network
-import Network.HTTP.Conduit hiding (def)
-import System.Console.CmdArgs
-import Text.XmlHtml
-import Text.XmlHtml.Cursor
+import           Blaze.ByteString.Builder
+import           Blaze.ByteString.Builder.Char.Utf8
+import           Control.Applicative
+import           Control.Monad
+import qualified Data.ByteString.Char8              as B
+import qualified Data.ByteString.Lazy.Char8         as BL
+import           Data.Char
+import           Data.List
+import           Data.Maybe
+import           Data.Monoid
+import qualified Data.Text                          as T
+import           Network
+import           Network.HTTP.Conduit               hiding (def)
+import           System.Console.CmdArgs
+import           Text.XmlHtml
+import           Text.XmlHtml.Cursor
 
+import           Data.Version                       (showVersion)
 import qualified Paths_html2hamlet
-import Data.Version (showVersion)
 
 data Args =
   Args
