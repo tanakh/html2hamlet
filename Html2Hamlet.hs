@@ -78,11 +78,11 @@ convert fname content = toByteString $ cvt $ fromNodes nodes
   where
     Right (HtmlDocument enc typ nodes) = parseHTML fname content
 
-    cvt = (fromString "!!!" `mappend`) .
-          (`mappend` fromString "\n") .
+    cvt = (fromString "!!!" <>) .
+          (<> fromString "\n") .
           go 0
 
-    go lev (Just cur) = slf `mappend` cld `mappend` bro
+    go lev (Just cur) = slf <> cld <> bro
       where
         slf = single lev (current cur)
         cld = go (lev+1) (firstChild cur)
@@ -94,41 +94,41 @@ convert fname content = toByteString $ cvt $ fromNodes nodes
     single lev (TextNode txt)
       | T.all isSpace txt = mempty
       | otherwise =
-        newline lev `mappend`
+        newline lev <>
         fromText (sanitize txt)
     single lev (Comment comment) =
       mconcat $ do
         line <- T.lines comment
         return $
-          newline lev `mappend`
-          fromString "$# " `mappend`
+          newline lev <>
+          fromString "$# " <>
           fromText line
     single lev (Element tag attrs _) =
-      newline lev `mappend`
-      fromString "<" `mappend`
-      fromText tag `mappend`
-      battr attrs `mappend`
+      newline lev <>
+      fromString "<" <>
+      fromText tag <>
+      battr attrs <>
       fromString ">"
 
     newline lev =
-      fromString "\n" `mappend`
+      fromString "\n" <>
       fromString (replicate (lev*2) ' ')
 
     battr attrs = mconcat $ map f attrs where
       f ("id", val) =
-        fromString " #" `mappend`
+        fromString " #" <>
         fromText val
       f ("class", val) =
         mconcat $ do
           klass <- T.words val
           return $
-            fromString " ." `mappend`
+            fromString " ." <>
             fromText klass
       f (key, val) =
-        fromString " " `mappend`
-        fromText key `mappend`
-        fromString "=\"" `mappend`
-        fromText val `mappend`
+        fromString " " <>
+        fromText key <>
+        fromString "=\"" <>
+        fromText val <>
         fromString "\""
 
     sanitize = T.dropWhile isSpace .
