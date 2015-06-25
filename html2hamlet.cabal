@@ -1,5 +1,5 @@
 Name:                html2hamlet
-Version:             0.1.0
+Version:             0.2.0
 Synopsis:            HTML to Hamlet converter
 
 Description:         HTML to Hamlet converter
@@ -19,15 +19,16 @@ Source-repository head
 
 Executable html2hamlet
   Main-is:             Html2Hamlet.hs
-  
-  Build-depends:       base >= 4 && < 5
-                     , bytestring >= 0.9 && < 0.10
-                     , text >= 0.11 && < 0.12
-                     , ascii >= 0.0 && < 0.1
-                     , blaze-builder >= 0.2 && < 0.3
-                     , hamlet >= 0.7 && < 0.8
-                     , xmlhtml >= 0.1 && < 0.2
-                     , cmdargs >= 0.6 && < 0.7
-                     , http-enumerator >= 0.4 && < 0.5
-                     , network >= 2.3 && < 2.4
+
+  Build-depends:       base            >= 4    && < 5
+                     , bytestring      >= 0.9
+                     , text            >= 0.11
+                     , blaze-builder   >= 0.2
+                     , hamlet          >= 1.1
+                     , xmlhtml         >= 0.2
+                     , cmdargs         >= 0.10
+                     , http-conduit    >= 1.9
+                     , network         >= 2.3
+
+  GHC-Options: -Wall
 
