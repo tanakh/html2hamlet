@@ -1,61 +1,54 @@
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns      #-}
 
 module Main (main) where
 
 import           Blaze.ByteString.Builder
 import           Blaze.ByteString.Builder.Char.Utf8
 import           Control.Applicative
+import           Control.DeepSeq
+import           Control.Exception
 import           Control.Monad
-import qualified Data.ByteString.Char8              as B
-import qualified Data.ByteString.Lazy.Char8         as BL
+import           Control.Monad.Trans
+import qualified Data.ByteString.Char8              as S
+import qualified Data.ByteString.Lazy.Char8         as L
 import           Data.Char
 import           Data.List
 import           Data.Maybe
 import           Data.Monoid
 import qualified Data.Text                          as T
+import           Data.Version                       (showVersion)
 import           Network
-import           Network.HTTP.Conduit               hiding (def)
-import           System.Console.CmdArgs
+import           Network.HTTP.Conduit
+import           Options.Declarative
 import           Text.XmlHtml
 import           Text.XmlHtml.Cursor
 
-import           Data.Version                       (showVersion)
-import qualified Paths_html2hamlet
-
-data Args =
-  Args
-  { files :: [String]
-  } deriving (Show, Data, Typeable)
+import           Paths_html2hamlet                  (version)
 
 main :: IO ()
-main = do
-  Args files <- cmdArgs $ Args
-    { files = def &= args &= typ "FILES/URLS..."
-    } &=
-    help "HTML to Hamlet converter" &=
-    summary ("html2hamlet " ++
-             showVersion Paths_html2hamlet.version ++
-             " (c) Hideyuki Tanaka 2011")
+main = run "html2hamlet" (Just $ showVersion version) cmd
 
-  if null files
-    then do
-    con <- B.getContents
-    let dest = convert "stdin" con
-    B.length dest `seq` B.putStr dest
-    else do
-    forM_ files $ \file -> do
-      if any (`isPrefixOf` file) ["http://", "https://"]
-        then withSocketsDo $ do
-        let outfile = httpFileName file
-        con <- simpleHttp file
-        let dest = convert file $ B.concat $ BL.toChunks con
-        B.length dest `seq` B.writeFile outfile dest
-        else do
-        let outfile = changeSuffix file
-        con <- B.readFile file
-        let dest = convert file con
-        B.length dest `seq` B.writeFile outfile dest
+cmd :: Arg "FILES/URLS..." [String]
+    -> Cmd "HTML to Hamlet converter" ()
+cmd (get -> []) = liftIO $
+  writeHamlet "stdin" S.getContents S.putStr
+
+cmd (get -> files) = liftIO $ do
+  forM_ files $ \file -> do
+    if any (`isPrefixOf` file) ["http://", "https://"]
+      then do
+      writeHamlet file (L.toStrict <$> simpleHttp file) $ S.writeFile (httpFileName file)
+      else do
+      writeHamlet file (S.readFile file) $ S.writeFile (changeSuffix file)
+
+writeHamlet :: String -> IO S.ByteString -> (S.ByteString -> IO ()) -> IO ()
+writeHamlet sourceName reader writer = do
+  con <- reader
+  let dest = convert sourceName con
+  evaluate $ rnf dest
+  writer dest
 
 httpFileName :: String -> String
 httpFileName url = changeSuffix nsuf
@@ -73,7 +66,7 @@ changeSuffix file
   | otherwise =
     file ++ ".hamlet"
 
-convert :: String -> B.ByteString -> B.ByteString
+convert :: String -> S.ByteString -> S.ByteString
 convert fname content = toByteString $ cvt $ fromNodes nodes
   where
     Right (HtmlDocument enc typ nodes) = parseHTML fname content

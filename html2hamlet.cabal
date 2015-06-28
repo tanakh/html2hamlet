@@ -1,34 +1,31 @@
-Name:                html2hamlet
-Version:             0.2.0
-Synopsis:            HTML to Hamlet converter
+name: html2hamlet
+version: 0.2.0
+cabal-version: >=1.6
+build-type: Simple
+license: BSD3
+license-file: LICENSE
+maintainer: tanaka.hideyuki@gmail.com
+homepage: http://github.com/tanakh/html2hamlet
+synopsis: HTML to Hamlet converter
+description:
+    HTML to Hamlet converter
+category: Text
+author: Hideyuki Tanaka
 
-Description:         HTML to Hamlet converter
+source-repository head
+    type: git
+    location: https://tanakh@github.com/tanakh/html2hamlet.git
 
-License:             BSD3
-License-file:        LICENSE
-Homepage:            http://github.com/tanakh/html2hamlet
-Author:              Hideyuki Tanaka
-Maintainer:          tanaka.hideyuki@gmail.com
-Category:            Text
-Build-type:          Simple
-Cabal-version:       >=1.6
-
-Source-repository head
-  Type: git
-  Location: https://tanakh@github.com/tanakh/html2hamlet.git
-
-Executable html2hamlet
-  Main-is:             Html2Hamlet.hs
-
-  Build-depends:       base            >= 4    && < 5
-                     , bytestring      >= 0.9
-                     , text            >= 0.11
-                     , blaze-builder   >= 0.2
-                     , hamlet          >= 1.1
-                     , xmlhtml         >= 0.2
-                     , cmdargs         >= 0.10
-                     , http-conduit    >= 1.9
-                     , network         >= 2.3
-
-  GHC-Options: -Wall
-
+executable html2hamlet
+    main-is: Html2Hamlet.hs
+    build-depends: base >=4 && <5
+                 , bytestring >=0.9
+                 , text >=0.11
+                 , blaze-builder >=0.2
+                 , hamlet >=1.1
+                 , xmlhtml >=0.2
+                 , http-conduit >=1.9
+                 , network >=2.3
+                 , deepseq
+                 , optparse-declarative >= 0.3
+                 , mtl
