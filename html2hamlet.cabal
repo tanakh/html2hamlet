@@ -23,9 +23,11 @@ executable html2hamlet
                  , text >=0.11
                  , blaze-builder >=0.2
                  , hamlet >=1.1
-                 , xmlhtml >=0.2
                  , http-conduit >=1.9
                  , network >=2.3
                  , deepseq
                  , optparse-declarative >= 0.3
                  , mtl
+                 , html-conduit
+                 , xml-conduit
+                 , containers
