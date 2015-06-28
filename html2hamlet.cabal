@@ -1,5 +1,5 @@
 name: html2hamlet
-version: 0.2.0
+version: 0.3.0
 cabal-version: >=1.6
 build-type: Simple
 license: BSD3
@@ -20,13 +20,13 @@ executable html2hamlet
     main-is: Html2Hamlet.hs
     build-depends: base >=4 && <5
                  , bytestring >=0.9
-                 , text >=0.11
-                 , hamlet >=1.1
-                 , http-conduit >=1.9
-                 , network >=2.3
-                 , optparse-declarative >= 0.3
-                 , mtl
-                 , html-conduit
-                 , xml-conduit
                  , containers
+                 , hamlet >=1.1
+                 , html-conduit
+                 , http-conduit >=1.9
+                 , mtl
+                 , optparse-declarative >= 0.3
+                 , regex-tdfa
+                 , text >=0.11
                  , wl-pprint-text >= 1.1
+                 , xml-conduit

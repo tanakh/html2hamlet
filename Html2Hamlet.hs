@@ -9,8 +9,8 @@ import           Control.Monad
 import           Control.Monad.Trans
 import qualified Data.ByteString.Lazy.Char8   as L
 import           Data.Char
-import           Data.List
 import qualified Data.Map                     as Map
+import           Data.Maybe
 import           Data.Monoid
 import qualified Data.Text                    as T
 import qualified Data.Text.Lazy               as TL
@@ -20,6 +20,7 @@ import           Options.Declarative
 import           System.IO
 import qualified Text.HTML.DOM                as HTML
 import           Text.PrettyPrint.Leijen.Text hiding ((<>))
+import           Text.Regex.TDFA
 import           Text.XML
 import           Text.XML.Cursor              (child, fromDocument, node)
 
@@ -32,31 +33,35 @@ cmd :: Arg "FILES/URLS..." [String]
     -> Cmd "HTML to Hamlet converter" ()
 cmd (get -> []) = liftIO $
   writeHamlet L.getContents putDoc
-cmd (get -> files) = liftIO $ do
-  forM_ files $ \file -> do
-    if any (`isPrefixOf` file) ["http://", "https://"]
-      then writeHamlet (simpleHttp file) $ \doc -> withFile (httpFileName file) WriteMode $ \h -> hPutDoc h doc
-      else writeHamlet (L.readFile file) $ \doc -> withFile (changeSuffix file) WriteMode $ \h -> hPutDoc h doc
+cmd (get -> files) = do
+  logger <- getLogger
+  liftIO $ forM_ files $ \file -> do
+    if file =~ ("^https?://" :: String)
+      then do
+      writeHamlet (simpleHttp file) $ \doc -> do
+        let saveName = changeSuffix $ httpFileName file
+        logger 1 $ "Convert " ++ show file ++ " to " ++ show saveName
+        withFile saveName WriteMode (`hPutDoc` doc)
+      else do
+      writeHamlet (L.readFile file) $ \doc -> do
+        let saveName = changeSuffix file
+        logger 1 $ "Convert " ++ show file ++ " to " ++ show saveName
+        withFile saveName WriteMode (`hPutDoc` doc)
 
 writeHamlet :: IO L.ByteString -> (Doc -> IO ()) -> IO ()
 writeHamlet reader writer =
   writer . convert =<< reader
 
 httpFileName :: String -> String
-httpFileName url = changeSuffix nsuf
-  where
-    nsuf | null suf = "index.html"
-         | otherwise = suf
-    suf = dropQuery $ dropFrag $ reverse $ takeWhile (/= '/') $ reverse url
-    dropFrag  = takeWhile (/= '#')
-    dropQuery = takeWhile (/= '?')
+httpFileName url = fromMaybe "index.html" $ do
+  [_, _, f, _, _, _] <- listToMaybe $ url =~ ("https?://(.*/)*([^#?]*)((#[^?]*)|(\\?[^#]*))*" :: String)
+  guard $ not $ null f
+  return f
 
 changeSuffix :: String -> String
-changeSuffix file
-  | any (`isSuffixOf` file) [".html", ".htm"] =
-    (++ "hamlet") $ reverse $ dropWhile (/= '.') $ reverse file
-  | otherwise =
-    file ++ ".hamlet"
+changeSuffix file = (++ ".hamlet") $ fromMaybe file $ do
+  [_, baseName] <- listToMaybe $ file =~ ("(.*)\\.html?$" :: String)
+  return baseName
 
 convert :: L.ByteString -> Doc
 convert = cvt . fromDocument . HTML.parseLBS where
